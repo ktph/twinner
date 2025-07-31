@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Твістер Статистика Ходів</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 40px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 1.3em;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-bottom: 25px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+        }
+
+        #twisterMove {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 25px;
+            padding: 15px 30px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            text-align: center;
+            line-height: 1.2; 
+            height: 2.4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: pre-wrap;
+            word-break: break-word;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .color-red { color: #e74c3c; }
+        .color-blue { color: #3498db; }
+        .color-yellow { color: #f39c12; }
+        .color-green { color: #27ae60; }
+
+        .stats-section {
+            width: 80%;
+            max-width: 600px;
+            margin-top: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .stats-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+
+        .total-count {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #28a745;
+        }
+
+        .limb-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 1.1em;
+        }
+
+        .limb-stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .limb-name {
+            flex-basis: 60%;
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        .limb-count {
+            flex-basis: 20%;
+            text-align: right;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .limb-percentage {
+            flex-basis: 20%;
+            text-align: right;
+            color: #6c757d;
+            font-size: 0.9em;
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Гра "Твістер"</h1>
+    
+    <button onclick="generateMove()">Згенерувати хід</button>
+
+    <p id="twisterMove">Натисніть "Згенерувати хід"</p>
+    
+    <div class="stats-section">
+        <h2>Статистика випадань</h2>
+        <p class="total-count">Загальна кількість ходів: <span id="totalMovesCount">0</span></p>
+        <div id="statsContainer">
+            </div>
+    </div>
+
+    <audio id="backgroundMusic" src="twister-fon.mp3" autoplay loop></audio>
+    <audio id="moveSound" src="twister-button.mp3" preload="auto"></audio>
+
+    <p style="margin-top: 30px; font-size: 0.9em; color: #777; text-align: center; max-width: 600px;">
+        Для безкоштовної музики та звукових ефектів відвідайте:
+        <a href="https://pixabay.com/music/" target="_blank" style="color: #007bff; text-decoration: none;">Музика на Pixabay</a> або
+        <a href="https://pixabay.com/sound-effects/" target="_blank" style="color: #007bff; text-decoration: none;">Звукові ефекти на Pixabay</a>.
+        Збережіть файли у тій же папці, що й цей HTML, та вкажіть їхні назви у 'src' для тегів &lt;audio&gt;.
+    </p>
+
+
+    <script>
+        const limbs = ['Ліва рука', 'Права рука', 'Ліва нога', 'Права нога'];
+        const colors = ['червоний', 'синій', 'жовтий', 'зелений'];
+        const colorClasses = {
+            'червоний': 'color-red',
+            'синій': 'color-blue',
+            'жовтий': 'color-yellow',
+            'зелений': 'color-green'
+        };
+
+        const limbStats = {
+            'Ліва рука': 0,
+            'Права рука': 0,
+            'Ліва нога': 0,
+            'Права нога': 0
+        };
+
+        let totalMoves = 0;
+
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const moveSound = document.getElementById('moveSound');
+    // Встановлення гучності фонової музики
+    // Значення від 0.0 (повна тиша) до 1.0 (максимальна гучність)
+    // Для "у 3 рази тихіше" використовуємо 1/3, тобто приблизно 0.33
+    backgroundMusic.volume = 0.2; 
+
+        let musicStarted = false;
+        // Запускаємо музику після першого кліку на кнопці
+        document.querySelector('button').addEventListener('click', () => {
+            if (!musicStarted) {
+                backgroundMusic.play().catch(e => console.log("Не вдалося запустити фонову музику:", e));
+                musicStarted = true;
+            }
+        });
+
+
+        function updateStatsDisplay() {
+            const statsContainer = document.getElementById('statsContainer');
+            const totalMovesCountElement = document.getElementById('totalMovesCount');
+            
+            statsContainer.innerHTML = '';
+            totalMovesCountElement.textContent = totalMoves;
+
+            for (const limb of limbs) {
+                const count = limbStats[limb];
+                const percentage = totalMoves > 0 ? ((count / totalMoves) * 100).toFixed(1) : 0;
+
+                const row = document.createElement('div');
+                row.classList.add('limb-stat-row');
+                row.innerHTML = `
+                    <span class="limb-name">${limb}</span>
+                    <span class="limb-count">${count}</span>
+                    <span class="limb-percentage">${percentage}%</span>
+                `;
+                statsContainer.appendChild(row);
+            }
+        }
+
+        updateStatsDisplay(); 
+
+        function generateMove() {
+            const randomLimb = limbs[Math.floor(Math.random() * limbs.length)];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+            const twisterMoveElement = document.getElementById('twisterMove');
+            
+            twisterMoveElement.innerHTML = `${randomLimb}<br>${randomColor}`;
+            
+            for (const colorClass of Object.values(colorClasses)) {
+                twisterMoveElement.classList.remove(colorClass);
+            }
+            twisterMoveElement.classList.add(colorClasses[randomColor]);
+
+            moveSound.currentTime = 0;
+            moveSound.play().catch(e => console.log("Не вдалося відтворити звук ходу:", e));
+
+
+            limbStats[randomLimb]++;
+            totalMoves++;
+            
+            updateStatsDisplay();
+        }
+    </script>
+</body>
+</html>
